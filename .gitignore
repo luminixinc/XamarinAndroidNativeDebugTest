@@ -1,0 +1,17 @@
+# Visual Studio 2019
+.vs
+*.csproj.user
+*.shproj.user
+*.vcxproj.user
+
+# Build artifacts
+ARM/
+ARM64/
+NativeHello/ARM/
+NativeHello/ARM64/
+NativeHello/x64/
+NativeHello/x86/
+NativeHelloApp/bin/
+NativeHelloApp/obj
+x64/
+x86/
