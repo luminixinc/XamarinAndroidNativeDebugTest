@@ -1,7 +1,7 @@
 XamarinAndroidNativeDebugTest
 =============================
 
-This test case shows that you cannot create an AAB bundle a Release build of an native Android app (containing C++ code compiled to the 4 architecture ABIs).  The Release build AAB bundling process fails because it appears that MSBuild is attempting to bundle `gdbserver` into the AAB.  (Note that the same issue of including `gdbserver` also occurs if bundling as APK, including multiple arch+ABI specific APKs, however in this case including `gdbserver` is not a fatal build error).
+This test case shows that you cannot create an AAB bundle of a Release build of a native Android app (containing C++ code compiled to the 4 architecture ABIs).  The Release build AAB bundling process fails because it appears that MSBuild is attempting to bundle `gdbserver` into the AAB.  (Note that the same issue of including `gdbserver` also occurs if bundling as APK, including multiple arch+ABI specific APKs, however in this case including `gdbserver` is not a fatal build error).
 
 Dramatis Personae
 -----------------
@@ -23,7 +23,7 @@ Verify that a Debug build of the app builds and you can debug natively
 Attempt to create a Release AAB bundle of the app
 -------------------------------------------------
 
-Once you are satistifed that the **NativeHelloApp** works and is natively debuggable, now we show tht you cannot create a Release AAB bundle of the app without hitting the error of the erroneously included `gdbserver`.
+Once you are satistifed that the **NativeHelloApp** works and is natively debuggable, now we show that you cannot create a Release AAB bundle of the app without hitting the error of the erroneously included `gdbserver`.
 
 - Switch your build Configuration to *Release* with Platform *Any CPU*
 - From the *Build* menu, choose *Batch Build*
@@ -32,12 +32,12 @@ Once you are satistifed that the **NativeHelloApp** works and is natively debugg
 - After all the architectures are built, right-click on the **NativeHelloApp** project and choose *Rebuild*
 - After the final build, right-click on the **NativeHelloApp** project and choose *Archive...*
 
-Note that you will see the following failure: `Files under lib/ must have .so extension, found 'lib/x86/gdbserver'.`
+**Note that you will see the following failure:** `Files under lib/ must have .so extension, found 'lib/x86/gdbserver'.`
 
 Futile attempt #1 to work-around this failure to bundle
 -------------------------------------------------------
 
-In the **NativeHelloApp** Properties, under the *Android Options* tab (for a Release configuration), uncheck the *Enable developer instrumentation (debugging and profiling)*.  (NOTE that this  not particularly clear/discoverable what this checkbox is for exactly, but it does change the `<DebugSymbols>` in the project file which would lead us to suspect it has something more to do with PDB generation than whether `gdbsever` is bundled)
+In the **NativeHelloApp** Properties, under the *Android Options* tab (for a *Release* Configuration), uncheck the *Enable developer instrumentation (debugging and profiling)*.  (NOTE that it is not particularly clear/discoverable what this checkbox is for exactly, but it does change the `<DebugSymbols>` in the project file which would lead us to suspect it has something more to do with PDB generation than whether `gdbsever` is bundled).
 
 Repeat the Release AAB bundle process in the above section, and you should still see the same bundling failure.
 
@@ -51,21 +51,21 @@ Repeat the Release AAB bundle process, and this time it should complete with SUC
 - Switch the build Configuration to *Debug* and choose a Platform arch that matches your attached Android device (e.g., *ARM, ARM64, etc*)
 - Manually clean and rebuild the **NativeHello** project
 - Manually clean and rebuild the **NativeHelloApp** project
-- This time when you debug the **NativeHelloApp** project, you will see the C++ debugger hit the breakpoint you set in the **NativeHello.cpp** file
-- At the CLI, you can verify that the debug APK (in WSL: `./NativeHelloApp/bin/Debug/com.companyname.nativehelloapp-Signed.apk`) that was built does NOT have any `gdbserver` included
+- This time when you debug the **NativeHelloApp** project, you will **NOT** hit the breakpoint you previously set in the **NativeHello.cpp** file
+- At the command line, you can verify that the debug APK (in WSL: `./NativeHelloApp/bin/Debug/com.companyname.nativehelloapp-Signed.apk`) that was built does **NOT** have any `gdbserver` included
 
-So unfortunately we are stuck in a "Catch-22" situation here betweeen the unwanted inclusion of `gdbserver` in *Release* bundles, and the lack of `gdbserver` in *Debug* builds.
+So unfortunately we are stuck in a "Catch-22" situation here between the unwanted inclusion of `gdbserver` in *Release* bundles, and the lack of `gdbserver` in *Debug* builds.
 
 Questions
 ---------
 
-So obviously this is a contrived simple example, but it illustrates a real issue we are having in our published Xamarin.Forms/Xamarin.Android app(s).  We have native-compiled libraries across all Android supported arch+ABIs, and we need the ability to debug into this layer for debug builds, as well as 
+So obviously this is a contrived example, but it illustrates a real issue we are having in our published Xamarin.Forms/Xamarin.Android app(s).  We have native-compiled libraries across all Android supported arch+ABIs, and we need the ability to debug into this layer for *Debug* builds, as well as the ability to create *Release* AAB bundles.
 
 - Are we are overlooking some simple project fix that will unstick us from this Catch-22 situation?
-- Could the inclusion of `gdbserver` in official *Release* APKs (non-AAB bundling procedure) be deemed a security risk?
-- Is the above batch build process and the inclusion of the four arch+ABIs `nativeLibrary.so` files in the Xamarin.Android app the "recommended best practice" for building this type of "hybrid" managed/native Android app from Visual Studio?
+- Could the previous inclusion of `gdbserver` in official *Release* APKs (non-AAB bundling procedure) be deemed a security risk?
+- Is the above batch build process and the inclusion of the four arch+ABIs `./NativeHello/lib/<ARCH+ABI>/libNativeHello.so` files in the app the "recommended best practice" for building this type of "hybrid" (managed/native) Xamarin.Android app from Visual Studio?
 
-An MSBuild fix that appears to Work For Us
+An MSBuild fix that appears to *Work For Us*
 ------------------------------------------
 
 So we have taken the liberty to sleuth into MSBuild and have hit upon a potential solution that appears to work just fine for us.
